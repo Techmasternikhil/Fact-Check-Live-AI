@@ -139,15 +139,6 @@ To run the entire stack locally via Docker:
 ```bash
 docker-compose up --build
 ```
-
-### 5. 🎥 Generating a Demo Video
-If you need a high-quality video recording of the platform in action (e.g., for a Capstone presentation), an automated Playwright script is included. It automatically boots a headless browser, clicks through the verification flow, and saves a `.webm` video to your local folder.
-```bash
-uv pip install playwright
-uv run playwright install chromium
-uv run python record_capstone_demo.py
-```
-
 ---
 
 ## 🛡️ Security & Guardrails
