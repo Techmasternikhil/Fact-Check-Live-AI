@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FactCheck Live | Enterprise Multi-Agent News Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* CSS Variables & Glassmorphism Theme */
+    :root {
+      --bg: #0b0f19;
+      --surface: rgba(20, 26, 40, 0.6);
+      --surface-hover: rgba(30, 41, 59, 0.8);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(96, 165, 250, 0.4);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-glow: rgba(59, 130, 246, 0.5);
+      --danger: #f87171;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --danger-border: rgba(239, 68, 68, 0.4);
+      --danger-glow: rgba(239, 68, 68, 0.5);
+      --warning: #fbbf24;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --warning-border: rgba(245, 158, 11, 0.4);
+      --success: #34d399;
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --success-border: rgba(16, 185, 129, 0.4);
+      --success-glow: rgba(16, 185, 129, 0.5);
+      
+      --blur: blur(16px);
+      --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      
+      --gradient-bg: linear-gradient(135deg, #0b0f19 0%, #151a2a 100%);
+    }
+
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --surface: rgba(255, 255, 255, 0.7);
+      --surface-hover: rgba(255, 255, 255, 0.9);
+      --border: rgba(0, 0, 0, 0.1);
+      --border-focus: rgba(37, 99, 235, 0.4);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      --gradient-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--gradient-bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Ambient Background Glows */
+    .bg-glow-1 { position: fixed; top: -10%; left: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+    .bg-glow-2 { position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 70px;
+      background: var(--surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.5rem;
+      background: linear-gradient(to right, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-actions { display: flex; gap: 12px; }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+    }
+    .icon-btn:hover { background: var(--surface-hover); color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    /* Layout Wrapper: 3 Columns */
+    .layout-wrapper {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 70px);
+      max-width: 1800px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+    }
+
+    /* Left Sidebar: Controls & History */
+    .sidebar-left {
+      width: 320px;
+      background: var(--surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .sidebar-left h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; }
+
+    /* Center: News Feed */
+    .main-content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Right Sidebar: AI Workspace */
+    .sidebar-right {
+      width: 400px;
+      background: var(--surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 100%;
+    }
+
+    /* Controls Elements */
+    .input-group {
+      display: flex; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; margin-bottom: 16px; transition: all 0.3s;
+    }
+    .input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+    .input-group i { color: var(--text-muted); width: 18px; }
+    .input-group input {
+      flex: 1; background: transparent; border: none; padding: 14px 12px; color: var(--text); outline: none; font-family: inherit; font-size: 0.95rem;
+    }
+    
+    select.form-select {
+      background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--text); padding: 14px 16px; border-radius: 12px; outline: none; font-size: 0.95rem; width: 100%; margin-bottom: 16px; appearance: none; font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; border: none; border-radius: 12px; padding: 14px 20px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-shadow: 0 4px 15px var(--primary-glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); filter: brightness(1.1); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Topic Tabs */
+    .tabs {
+      display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; scrollbar-width: none; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.3s; backdrop-filter: var(--blur);
+    }
+    .tab:hover { background: rgba(255,255,255,0.1); color: var(--text); transform: translateY(-1px); }
+    .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 10px var(--primary-glow); }
+
+    /* News Card */
+    .news-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); transition: all 0.3s; position: relative; overflow: hidden; cursor: pointer;
+    }
+    .news-card.expanded { transform: scale(1.02); background: rgba(255,255,255,0.05); }
+    .news-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+    
+    .card-meta { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; font-weight: 500; }
+    .source-badge { background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); color: var(--text); }
+    
+    .card-title { font-size: 1.3rem; font-weight: 600; color: var(--text); margin-bottom: 20px; line-height: 1.4; }
+    .card-title a { color: inherit; text-decoration: none; transition: color 0.2s; }
+    .card-title a:hover { color: var(--primary); }
+
+    .card-actions { display: flex; justify-content: flex-end; }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+    /* Fact Result & Animations */
+    .fact-result {
+      margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border); display: none; transform-origin: top;
+    }
+    
+    @keyframes revealResult {
+      0% { opacity: 0; transform: scaleY(0.9) translateY(-10px); }
+      100% { opacity: 1; transform: scaleY(1) translateY(0); }
+    }
+    
+    .fact-result.visible { display: block; animation: revealResult 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .verdict-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: var(--shadow);
+    }
+    .verdict-badge.real { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); text-shadow: 0 0 10px var(--success-glow); box-shadow: 0 0 15px var(--success-glow); }
+    .verdict-badge.uncertain { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+    .verdict-badge.fake { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); text-shadow: 0 0 10px var(--danger-glow); box-shadow: 0 0 15px var(--danger-glow); }
+
+    .score-display { font-size: 1rem; font-weight: 700; color: var(--text); background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+    
+    .reason-text { font-size: 0.95rem; color: var(--text); line-height: 1.6; margin-bottom: 16px; background: rgba(0,0,0,0.15); padding: 14px; border-radius: 10px; border-left: 3px solid var(--primary); }
+    
+    .flags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .flag { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+
+    /* AI Workspace (Right Sidebar) */
+    .workspace-tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .workspace-tab { flex: 1; text-align: center; padding: 16px; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; transition: all 0.3s; border-bottom: 2px solid transparent; }
+    .workspace-tab:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+    .workspace-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: rgba(59,130,246,0.05); }
+
+    .workspace-content { flex: 1; padding: 20px; display: none; flex-direction: column; gap: 16px; min-height: 0; }
+    .workspace-content.active { display: flex; }
+
+    /* Agent Terminal */
+    .agent-log { font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; color: #a3e635; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; }
+    .agent-log .info { color: #60a5fa; }
+    .agent-log .warn { color: #fbbf24; }
+    .agent-log .error { color: #f87171; }
+    .terminal-container { background: #000; border-radius: 12px; padding: 16px; border: 1px solid #333; flex: 1; overflow-y: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+
+    /* Chat Interface */
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .chat-msg { padding: 12px 16px; border-radius: 12px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; }
+    .chat-msg.user { align-self: flex-end; background: var(--primary); color: #fff; box-shadow: 0 4px 12px var(--primary-glow); border-bottom-right-radius: 4px; }
+    .chat-msg.ai { align-self: flex-start; background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    
+    .chat-input-area { display: flex; gap: 10px; margin-top: auto; }
+    .chat-input-area input { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 12px 16px; border-radius: 12px; color: var(--text); outline: none; font-family: inherit; }
+    .chat-input-area input:focus { border-color: var(--primary); }
+    .chat-btn { background: var(--primary); border: none; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .chat-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
+
+    /* Tablet Responsive (max-width: 1024px) */
+    @media (max-width: 1024px) {
+      .sidebar-right { position: fixed; right: -400px; height: calc(100vh - 70px); transition: right 0.3s; box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 40; }
+      .sidebar-right.open { right: 0; }
+      .mobile-toggle-ai { display: flex !important; }
+      .sidebar-left { width: 280px; }
+    }
+
+    /* Mobile Responsive (max-width: 768px) */
+    @media (max-width: 768px) {
+      .sidebar-left { position: fixed; left: -320px; height: calc(100vh - 70px); transition: left 0.3s; box-shadow: 10px 0 30px rgba(0,0,0,0.5); z-index: 40; width: 320px; }
+      .sidebar-left.open { left: 0; }
+      .mobile-toggle-menu { display: flex !important; }
+      .layout-wrapper { flex-direction: column; }
+      
+      .sidebar-right { width: 100%; right: -100%; }
+      
+      .main-content { padding: 16px; }
+      .news-card { padding: 16px; }
+      .card-title { font-size: 1.1rem; }
+      
+      /* Touch targets & typography */
+      .btn-primary, .btn-secondary, .chat-btn, .icon-btn { min-height: 44px; min-width: 44px; }
+      .tab { padding: 10px 16px; font-size: 14px; }
+      body { font-size: 14px; }
+      
+      /* Bottom FAB for AI Workspace */
+      .mobile-toggle-ai { display: none !important; } /* Hide from top nav on mobile */
+      .fab-ai { display: flex !important; position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--primary-glow); z-index: 30; border: none; cursor: pointer; transition: all 0.3s; }
+      .fab-ai:hover { transform: scale(1.05); }
+    }
+
+    .mobile-toggle-ai, .mobile-toggle-menu, .fab-ai { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- Top Navbar -->
+  <nav class="navbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button class="icon-btn mobile-toggle-menu" onclick="document.getElementById('sidebar-left').classList.toggle('open')"><i data-lucide="menu"></i></button>
+      <div class="brand">
+        <i data-lucide="shield-check" style="color:var(--primary)"></i>
+        FactCheck Live
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="icon-btn mobile-toggle-ai" onclick="document.getElementById('sidebar-right').classList.toggle('open')"><i data-lucide="terminal"></i></button>
+      <button class="icon-btn" id="theme-toggle" title="Toggle Theme"><i data-lucide="moon"></i></button>
+    </div>
+  </nav>
+
+  <div class="layout-wrapper">
+    <!-- Left Sidebar: Controls & History -->
+    <aside class="sidebar-left" id="sidebar-left">
+      <h3>API Settings</h3>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <span style="font-size:0.85rem; color:var(--text-muted);">Gemini API Key</span>
+        <div id="api-key-status" style="display:flex; align-items:center; gap:6px; font-size:0.75rem;">
+          <div style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></div>
+          <span style="color:var(--danger);">Not Set</span>
+        </div>
+      </div>
+      <div class="input-group">
+        <i data-lucide="key"></i>
+        <input type="password" id="api-key-input" placeholder="Paste Gemini key (aistudio.google.com)" autocomplete="off" onchange="saveApiKey()" />
+        <button onclick="clearApiKey()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:0 8px;display:none;" id="clear-api-key-btn" title="Clear Key"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+      </div>
+
+      <div style="margin: 24px 0; height: 1px; background: var(--border);"></div>
+
+      <h3>Search & Filter</h3>
+      <div class="input-group">
+        <i data-lucide="search"></i>
+        <input type="text" id="search-input" placeholder="Search global news..." autocomplete="off" />
+      </div>
+      <select class="form-select" id="region-select">
+        <option value="en-US|US" selected>US (English)</option>
+        <option value="en-GB|GB">Global (English)</option>
+        <option value="en-IN|IN">India (English)</option>
+      </select>
+      <button class="btn-primary" id="fetch-btn" onclick="fetchNews()">
+        <i data-lucide="refresh-cw" style="width:18px;height:18px"></i> Fetch Stream
+      </button>
+
+      <div style="margin: 24px 0; height: 1px; background: var(--border);"></div>
+
+      <h3>Verify Custom Headline</h3>
+      <div class="input-group">
+        <i data-lucide="edit-3"></i>
+        <input type="text" id="custom-headline-input" placeholder="Paste headline here..." autocomplete="off" />
+      </div>
+      <div class="input-group">
+        <i data-lucide="link"></i>
+        <input type="text" id="custom-source-input" placeholder="Source (e.g., infowars)" autocomplete="off" />
+      </div>
+      <button class="btn-primary" onclick="verifyCustomHeadline()">
+        <i data-lucide="check-circle" style="width:18px;height:18px"></i> Verify Custom
+      </button>
+
+      <div style="margin: 24px 0; height: 1px; background: var(--border);"></div>
+
+      <h3>Analysis History</h3>
+      <div id="history-container" style="display:flex; flex-direction:column; gap:12px;">
+        <!-- History items -->
+      </div>
+    </aside>
+
+    <!-- Center Panel: News Feed -->
+    <main class="main-content">
+      <!-- Topic Tabs -->
+      <div class="tabs" id="topic-tabs">
+        <div class="tab active" data-topic="">Top Stories</div>
+        <div class="tab" data-topic="WORLD">World</div>
+        <div class="tab" data-topic="BUSINESS">Business</div>
+        <div class="tab" data-topic="TECHNOLOGY">Tech</div>
+        <div class="tab" data-topic="SCIENCE">Science</div>
+        <div class="tab" data-topic="HEALTH">Health</div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; flex-shrink: 0;">
+        <h2 style="font-size:1.2rem; font-weight:600;" id="feed-title">Live News Feed</h2>
+        <span id="feed-count" style="color:var(--text-muted); font-size:0.9rem;">0 items</span>
+      </div>
+
+      <div id="news-feed" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="text-align:center; padding: 80px 20px; color: var(--text-muted);">
+          <div style="background:rgba(255,255,255,0.05); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; border:1px solid var(--border);">
+            <i data-lucide="activity" style="width:32px;height:32px;color:var(--primary);"></i>
+          </div>
+          <p style="font-size:1.1rem; margin-bottom:8px; color:var(--text)">System Ready</p>
+          <p style="font-size:0.9rem;">Click Fetch Stream to pull live headlines.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar: AI Workspace -->
+    <aside class="sidebar-right" id="sidebar-right">
+      <div class="workspace-tabs">
+        <div class="workspace-tab active" onclick="switchTab('activity')">Agent Activity</div>
+        <div class="workspace-tab" onclick="switchTab('chat')">AI Chat</div>
+      </div>
+
+      <!-- Agent Terminal Tab -->
+      <div class="workspace-content active" id="tab-activity">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h3 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Orchestrator Logs</h3>
+          <span style="font-size:0.7rem; background:rgba(59,130,246,0.2); color:var(--primary); padding:2px 6px; border-radius:4px; font-weight:700;">LIVE</span>
+        </div>
+        <div class="terminal-container" id="terminal-out">
+          <div class="agent-log info">> ADK Sub-agent system initialized.</div>
+          <div class="agent-log">> Waiting for verification task...</div>
+        </div>
+      </div>
+
+      <!-- AI Chat Tab -->
+      <div class="workspace-content" id="tab-chat">
+        <div class="chat-messages" id="chat-box">
+          <div class="chat-msg ai">Hello! I am FactCheck Live Orchestrator. Ask me anything about the news or my verification process.</div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="Message Orchestrator..." onkeypress="if(event.key==='Enter') sendChat()" />
+          <button class="chat-btn" onclick="sendChat()"><i data-lucide="send" style="width:18px;height:18px"></i></button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Mobile FAB -->
+  <button class="fab-ai" onclick="document.getElementById('sidebar-right').classList.toggle('open')">
+    <i data-lucide="terminal"></i>
+  </button>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      updateApiKeyStatus();
+    });
+
+    // API Key Logic
+    function saveApiKey() {
+      const key = document.getElementById('api-key-input').value.trim();
+      if (key) {
+        localStorage.setItem('gemini_api_key', key);
+      } else {
+        localStorage.removeItem('gemini_api_key');
+      }
+      updateApiKeyStatus();
+    }
+    
+    function clearApiKey() {
+      localStorage.removeItem('gemini_api_key');
+      document.getElementById('api-key-input').value = '';
+      updateApiKeyStatus();
+    }
+    
+    function updateApiKeyStatus() {
+      const key = localStorage.getItem('gemini_api_key');
+      const statusEl = document.getElementById('api-key-status');
+      const clearBtn = document.getElementById('clear-api-key-btn');
+      const inputEl = document.getElementById('api-key-input');
+      
+      if (key) {
+        statusEl.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:var(--success); box-shadow:0 0 8px var(--success-glow);"></div><span style="color:var(--success);">Saved</span>`;
+        inputEl.placeholder = "••••••••••••••••••••••••";
+        inputEl.value = ""; // Do NOT render the key visibly
+        clearBtn.style.display = "block";
+      } else {
+        statusEl.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:var(--danger); box-shadow:0 0 8px var(--danger-glow);"></div><span style="color:var(--danger);">Not Set</span>`;
+        inputEl.placeholder = "Paste Gemini key (aistudio.google.com)";
+        inputEl.value = "";
+        clearBtn.style.display = "none";
+      }
+    }
+
+    // Theme logic
+    const htmlEl = document.documentElement;
+    if (localStorage.getItem('theme') === 'light') htmlEl.setAttribute('data-theme', 'light');
+    document.getElementById('theme-toggle').onclick = () => {
+      const isDark = htmlEl.getAttribute('data-theme') === 'dark';
+      htmlEl.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    };
+
+    // Event Delegation for News Card click animation
+    document.getElementById('news-feed').addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      const card = e.target.closest('.news-card');
+      if (card) {
+        card.classList.toggle('expanded');
+        // If the fact result is present but not visible, maybe toggle it too
+        const fact = card.querySelector('.fact-result');
+        if (fact && fact.innerHTML.trim() !== '') {
+          fact.classList.toggle('visible');
+        }
+      }
+    });
+
+    // Workspace Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.workspace-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.workspace-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    // State
+    let newsItems = [];
+    let currentTopic = '';
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        currentTopic = e.target.getAttribute('data-topic');
+        fetchNews();
+      });
+    });
+
+    async function fetchNews() {
+      const query = document.getElementById('search-input').value.trim();
+      const regionVal = document.getElementById('region-select').value;
+      const [hl, gl] = regionVal.split('|');
+      const btn = document.getElementById('fetch-btn');
+      const feed = document.getElementById('news-feed');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:18px;height:18px"></i> Loading';
+      lucide.createIcons();
+
+      feed.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">Fetching live stream...</div>';
+
+      try {
+        const params = new URLSearchParams({ limit: 15, hl, gl });
+        if (query) params.append('search', query);
+        if (currentTopic) params.append('topic', currentTopic);
+
+        const res = await fetch(`/api/news?${params}`);
+        const data = await res.json();
+        newsItems = data.items;
+        
+        document.getElementById('feed-title').textContent = data.title || 'Feed Results';
+        document.getElementById('feed-count').textContent = `${newsItems.length} items`;
+
+        if (newsItems.length === 0) {
+          feed.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No results found.</div>';
+          return;
+        }
+
+        feed.innerHTML = newsItems.map((item, i) => buildCard(item, i)).join('');
+        lucide.createIcons();
+
+      } catch (err) {
+        feed.innerHTML = `<div style="color:var(--danger);padding:20px;text-align:center">Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="refresh-cw" style="width:18px;height:18px"></i> Fetch Stream';
+        lucide.createIcons();
+      }
+    }
+
+    function buildCard(item, i) {
+      return `
+        <div class="news-card" id="card-${i}">
+          <div class="card-meta">
+            <span class="source-badge">${escHtml(item.source || 'Unknown')}</span>
+            <span>${item.pubDate ? new Date(item.pubDate).toLocaleDateString() : ''}</span>
+          </div>
+          <div class="card-title">
+            <a href="${escHtml(item.link)}" target="_blank">${escHtml(item.title)}</a>
+          </div>
+          <div class="card-actions">
+            <button class="btn-secondary" id="check-btn-${i}" onclick="startVerification(${i})">
+              <i data-lucide="scan-search" style="width:16px;height:16px"></i> AI Verify
+            </button>
+          </div>
+          <div class="fact-result" id="fact-${i}"></div>
+        </div>
+      `;
+    }
+
+    function verifyCustomHeadline() {
+      const title = document.getElementById('custom-headline-input').value.trim();
+      const source = document.getElementById('custom-source-input').value.trim() || 'Unknown';
+      if (!title) return;
+      
+      const newItem = { title, source, pubDate: new Date().toISOString(), link: '#' };
+      newsItems.unshift(newItem); // put at top
+      
+      const feed = document.getElementById('news-feed');
+      feed.innerHTML = newsItems.map((item, i) => buildCard(item, i)).join('');
+      lucide.createIcons();
+      
+      // Update count
+      document.getElementById('feed-count').textContent = `${newsItems.length} items`;
+      
+      startVerification(0);
+      
+      document.getElementById('custom-headline-input').value = '';
+      document.getElementById('custom-source-input').value = '';
+    }
+
+    // Verification Logic (SSE Streaming)
+    async function startVerification(i) {
+      const item = newsItems[i];
+      const checkBtn = document.getElementById(`check-btn-${i}`);
+      const factEl = document.getElementById(`fact-${i}`);
+      const terminal = document.getElementById('terminal-out');
+      
+      // UI Updates
+      switchTab('activity');
+      document.querySelectorAll('.workspace-tab')[0].classList.add('active');
+      document.querySelectorAll('.workspace-tab')[1].classList.remove('active');
+      if(window.innerWidth <= 1200) document.getElementById('sidebar-right').classList.add('open');
+
+      checkBtn.disabled = true;
+      checkBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px"></i> Analyzing';
+      lucide.createIcons();
+      
+      factEl.classList.add('visible');
+      factEl.innerHTML = '<div style="font-size:0.9rem;color:var(--text-muted);display:flex;align-items:center;gap:8px;"><i data-lucide="cpu" class="spin" style="width:16px;height:16px;color:var(--primary)"></i> ADK Pipeline Running...</div>';
+      lucide.createIcons();
+
+      terminal.innerHTML += `\n<div class="agent-log info">> INITIALIZING VERIFICATION PIPELINE</div>`;
+      terminal.innerHTML += `<div class="agent-log">> Target: "${item.title}"</div>`;
+      terminal.scrollTop = terminal.scrollHeight;
+
+      try {
+        const apiKey = localStorage.getItem('gemini_api_key') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['X-API-Key'] = apiKey;
+
+        const response = await fetch('/api/verify', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ title: item.title, source: item.source })
+        });
+
+        if (!response.ok) {
+            // Fallback to local
+            terminal.innerHTML += `<div class="agent-log warn">> ADK backend unavailable. Falling back to local heuristics...</div>`;
+            await fallbackCheckFact(i, item);
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let agentOutput = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const lines = decoder.decode(value).split('\n');
+          for (let line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.error) {
+                    terminal.innerHTML += `<div class="agent-log error">> ERROR: ${parsed.error}</div>`;
+                } else if (parsed.chunk) {
+                    agentOutput += parsed.chunk;
+                    // Print latest chunk to terminal, but format JSON nicely
+                    try {
+                        const testJson = JSON.parse(parsed.chunk);
+                        if (testJson.mode === 'heuristic') {
+                            const summary = `[OFFLINE MODE ACTIVATED] API limit reached or key missing.\nFalling back to local heuristic model...\n\n> Analyzing claims for: "${item.title}"\n> Source check: ${testJson.source_analysis}\n> Language check: ${testJson.language_analysis}\n\n── Reasoning ───────────────────────────\n${testJson.explanation}\n────────────────────────────────────────\n\nVerdict: ${testJson.verdict}\nScore: ${testJson.score}/100`;
+                            const safeChunk = escHtml(summary).replace(/\n/g, '<br>');
+                            terminal.innerHTML += `<span class="agent-log" style="color:#d9f99d">${safeChunk}</span>`;
+                        } else {
+                            throw new Error("Not heuristic json");
+                        }
+                    } catch (e) {
+                        const safeChunk = escHtml(parsed.chunk).replace(/\n/g, '<br>');
+                        terminal.innerHTML += `<span class="agent-log" style="color:#d9f99d">${safeChunk}</span>`;
+                    }
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+              } catch (e) {}
+            }
+          }
+        }
+        
+        terminal.innerHTML += `\n<div class="agent-log info">> PIPELINE COMPLETE.</div>`;
+        terminal.scrollTop = terminal.scrollHeight;
+
+        // Parse the final output block to render the UI badge
+        renderParsedResult(factEl, agentOutput, checkBtn, item.title, terminal.innerHTML);
+
+      } catch (err) {
+        terminal.innerHTML += `<div class="agent-log error">> CRITICAL ERROR: ${err.message}</div>`;
+        factEl.innerHTML = `<div style="color:var(--danger)">Error: ${err.message}</div>`;
+        checkBtn.disabled = false;
+        checkBtn.innerHTML = '<i data-lucide="scan-search" style="width:16px;height:16px"></i> Retry';
+        lucide.createIcons();
+      }
+    }
+
+    async function fallbackCheckFact(i, item) {
+       const apiKey = localStorage.getItem('gemini_api_key') || '';
+       const headers = { 'Content-Type': 'application/json' };
+       if (apiKey) headers['X-API-Key'] = apiKey;
+
+       const res = await fetch('/api/fact-check', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ title: item.title, source: item.source }),
+        });
+        const data = await res.json();
+        
+        const factEl = document.getElementById(`fact-${i}`);
+        const checkBtn = document.getElementById(`check-btn-${i}`);
+        
+        let cls = 'uncertain'; let icon = 'alert-triangle';
+        if (data.verdict === 'Likely Real') { cls = 'real'; icon = 'check-circle'; }
+        if (data.verdict === 'Likely Fake') { cls = 'fake'; icon = 'x-circle'; }
+
+        factEl.innerHTML = `
+          <div class="result-header">
+            <div class="verdict-badge ${cls}"><i data-lucide="${icon}" style="width:16px;height:16px"></i> ${data.verdict}</div>
+            <div class="score-display">Score: ${data.score}/100</div>
+          </div>
+          <p class="reason-text">${data.reason}</p>
+          <div style="font-size:0.75rem; color:var(--primary); margin-bottom:8px;">Engine: ${data.engine}</div>
+          <div class="flags">${data.flags?.map(f => `<span class="flag">${f}</span>`).join('')}</div>
+        `;
+        lucide.createIcons();
+        checkBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px"></i> Complete';
+        addHistory(item.title, data.verdict, `<div class="agent-log warn">> Local heuristics result for "${escHtml(item.title)}"</div><div class="agent-log">> Verdict: ${data.verdict}</div><div class="agent-log">> Score: ${data.score}</div>`);
+    }
+
+    function renderParsedResult(factEl, text, checkBtn, title, terminalHtml) {
+        let verdict = "Uncertain", score = 50, reason = "Analysis complete.", cls = "uncertain", icon="alert-triangle";
+        let isHeuristic = false;
+        let confidence = null;
+        
+        try {
+            // Check if it's the new structured JSON fallback
+            const data = JSON.parse(text);
+            if (data.mode === 'heuristic') {
+                isHeuristic = true;
+                verdict = data.verdict;
+                score = data.score;
+                reason = data.explanation;
+                confidence = data.confidence;
+                
+                if (verdict === "Likely Real") { cls = "real"; icon = "check-circle"; }
+                else if (verdict === "Likely Fake") { cls = "fake"; icon = "x-circle"; }
+            }
+        } catch (e) {
+            // Fallback to markdown parsing for live AI stream
+            if (text.includes("Likely Real")) { verdict = "Likely Real"; cls="real"; icon="check-circle"; }
+            else if (text.includes("Likely Fake")) { verdict = "Likely Fake"; cls="fake"; icon="x-circle"; }
+            
+            const scoreMatch = text.match(/Score:\s*(\d+)\/100/);
+            if(scoreMatch) score = scoreMatch[1];
+            
+            // Extract reasoning (simplified logic)
+            const reasonSplit = text.split("── Reasoning");
+            if(reasonSplit.length > 1) {
+                reason = reasonSplit[1].split("──")[0].replace(/─/g, '').trim();
+            }
+        }
+
+        const badgeHtml = isHeuristic 
+            ? `<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="zap" style="width:12px;height:12px;"></i> Offline Heuristic Mode ${confidence ? `(${confidence}% confidence)` : ''}</div>`
+            : `<div style="font-size:0.75rem; color:var(--primary); margin-bottom:8px;"><i data-lucide="cpu" style="width:12px;height:12px;display:inline;"></i> Multi-Agent Pipeline</div>`;
+
+        factEl.innerHTML = `
+          <div class="result-header">
+            <div class="verdict-badge ${cls}"><i data-lucide="${icon}" style="width:16px;height:16px"></i> ${verdict}</div>
+            <div class="score-display">Score: ${score}/100</div>
+          </div>
+          <p class="reason-text">${escHtml(reason)}</p>
+          ${badgeHtml}
+        `;
+        lucide.createIcons();
+        checkBtn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px"></i> Complete';
+        
+        addHistory(title, verdict, terminalHtml);
+    }
+
+    // History
+    function addHistory(title, verdict, terminalHtml) {
+        const container = document.getElementById('history-container');
+        let cls = 'warning';
+        if(verdict === 'Likely Real') cls = 'success';
+        if(verdict === 'Likely Fake') cls = 'danger';
+        
+        const timeStr = new Date().toLocaleTimeString();
+        
+        const div = document.createElement('div');
+        div.style.cssText = "padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid var(--border); cursor:pointer; transition:all 0.2s;";
+        div.onmouseover = () => div.style.background = "rgba(255,255,255,0.1)";
+        div.onmouseout = () => div.style.background = "rgba(255,255,255,0.03)";
+        div.onclick = () => {
+            if (terminalHtml) {
+                switchTab('activity');
+                document.getElementById('terminal-out').innerHTML = terminalHtml;
+                if(window.innerWidth <= 1200) document.getElementById('sidebar-right').classList.add('open');
+            }
+        };
+        div.innerHTML = `
+            <div style="font-size:0.7rem; color:var(--text-muted); text-align:right; margin-bottom:4px;">${timeStr}</div>
+            <div style="font-size:0.85rem; font-weight:500; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${escHtml(title)}</div>
+            <div style="font-size:0.75rem; color:var(--${cls}); font-weight:700;">${verdict}</div>
+        `;
+        container.prepend(div);
+    }
+
+    // AI Chat
+    async function sendChat() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if(!text) return;
+        
+        input.value = '';
+        const box = document.getElementById('chat-box');
+        
+        box.innerHTML += `<div class="chat-msg user">${escHtml(text)}</div>`;
+        const aiMsgId = 'msg-' + Date.now();
+        box.innerHTML += `<div class="chat-msg ai" id="${aiMsgId}"><i data-lucide="loader-2" class="spin" style="width:16px;height:16px"></i></div>`;
+        lucide.createIcons();
+        box.scrollTop = box.scrollHeight;
+
+        try {
+            const apiKey = localStorage.getItem('gemini_api_key') || '';
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiKey) headers['X-API-Key'] = apiKey;
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ message: text })
+            });
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            const aiMsgEl = document.getElementById(aiMsgId);
+            aiMsgEl.innerHTML = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const lines = decoder.decode(value).split('\n');
+                for (let line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+                        try {
+                            const parsed = JSON.parse(data);
+                            if(parsed.chunk) {
+                                aiMsgEl.innerHTML += escHtml(parsed.chunk).replace(/\n/g, '<br>');
+                                box.scrollTop = box.scrollHeight;
+                            }
+                        } catch(e){}
+                    }
+                }
+            }
+        } catch(e) {
+            document.getElementById(aiMsgId).innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
+        }
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+    
+    // Add spin animation CSS
+    const style = document.createElement('style');
+    style.innerHTML = `@keyframes spinner { to { transform: rotate(360deg); } } .spin { animation: spinner 1s linear infinite; }`;
+    document.head.appendChild(style);
+
+  </script>
+</body>
+</html>

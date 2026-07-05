@@ -1,0 +1,93 @@
+{
+  "api_tests": [
+    {
+      "name": "CORS Headers (Python)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "POST /api/chat missing msg",
+      "status": "FAIL",
+      "expected": "400 status",
+      "actual": "Status 429",
+      "severity": "Major",
+      "details": ""
+    },
+    {
+      "name": "POST /api/fact-check empty body",
+      "status": "FAIL",
+      "expected": "400 status",
+      "actual": "Status 429",
+      "severity": "Minor",
+      "details": ""
+    },
+    {
+      "name": "POST /api/fact-check local fallback",
+      "status": "FAIL",
+      "expected": "JSON with score and verdict",
+      "actual": "{'error': 'Too many requests from this IP, please try again later.'}",
+      "severity": "Major",
+      "details": ""
+    },
+    {
+      "name": "POST /api/fact-check Malformed JSON (Python)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "GET /api/health (Python)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "GET /api/news (Node)",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "security_tests": [
+    {
+      "name": "SQL Injection Payload",
+      "status": "FAIL",
+      "expected": "200 status (safe handle)",
+      "actual": "Status 429",
+      "severity": "Major",
+      "details": ""
+    },
+    {
+      "name": "POST /api/fact-check huge payload",
+      "status": "FAIL",
+      "expected": "400 or 413 status",
+      "actual": "Status 429",
+      "severity": "Major",
+      "details": "Payload not rejected by length limits"
+    },
+    {
+      "name": "XSS Payload",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Rate Limiting",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "performance": [
+    {
+      "name": "Performance: 3 Simultaneous Requests",
+      "status": "FAIL",
+      "expected": "All streams complete successfully",
+      "actual": "Success=False, Duration=0.40s",
+      "severity": "Major",
+      "details": ""
+    }
+  ],
+  "mcp": [
+    {
+      "name": "MCP Source Analysis",
+      "status": "PASS",
+      "details": ""
+    }
+  ]
+}

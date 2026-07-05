@@ -1,0 +1,58 @@
+{
+  "visual_layout": [
+    {
+      "name": "Console Errors",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Header Visible",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Mobile Layout Rendering",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Tablet Layout Rendering",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "core_features": [
+    {
+      "name": "Chat Tab Switch",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Chat Interface",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Fetch Stream Articles Loaded",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "AI Verify Streaming Output",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "Assistant Chat Response",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "security": [
+    {
+      "name": "UI Prompt Injection Guardrail",
+      "status": "PASS",
+      "details": ""
+    }
+  ]
+}

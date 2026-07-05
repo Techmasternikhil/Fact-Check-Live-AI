@@ -1,0 +1,50 @@
+# Google Cloud Run Service Configuration
+# Deployment command: gcloud run services replace cloudrun.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: factcheck-live-frontend
+  labels:
+    cloud.googleapis.com/location: us-central1
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/YOUR_PROJECT_ID/factcheck-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            # URL to the separately deployed Cloud Run backend service
+            - name: ADK_BACKEND_URL
+              value: "https://factcheck-live-backend-xxxxxx-uc.a.run.app"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: factcheck-live-backend
+  labels:
+    cloud.googleapis.com/location: us-central1
+spec:
+  template:
+    spec:
+      containers:
+        - image: gcr.io/YOUR_PROJECT_ID/factcheck-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: GEMINI_API_KEY
+              valueSecret:
+                name: gemini-api-key
+                key: latest
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"

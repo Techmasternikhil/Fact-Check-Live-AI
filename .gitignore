@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+uv.lock
+
+# Environment
+.env
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/

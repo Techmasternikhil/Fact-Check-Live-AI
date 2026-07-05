@@ -1,0 +1,23 @@
+# Use a Python slim image
+FROM python:3.11-slim
+
+# Install uv (fast Python package installer and resolver)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies into the system environment (since it's a container)
+RUN uv pip install --system -r pyproject.toml
+
+# Copy application code
+COPY app/ ./app/
+
+# Expose the FastAPI port
+EXPOSE 8000
+
+# We assume GEMINI_API_KEY is passed at runtime via env vars
+# Start the FastAPI server
+CMD ["uv", "run", "uvicorn", "app.server:api_app", "--host", "0.0.0.0", "--port", "8000"]
